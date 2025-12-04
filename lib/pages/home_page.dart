@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:sistema/funcs/encript_senha.dart';
 import 'package:sistema/funcs/validador_cpf.dart';
 import 'package:sistema/pages/esqueceu_page.dart';
+
+import 'package:sistema/pages/register_page.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:sistema/API/api_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,12 +22,14 @@ class _HomePageState extends State<HomePage> {
   TextEditingController _controller = new TextEditingController();
   TextEditingController _controllerPassword = new TextEditingController();
 
-  String hashSenha="";
+  String _hashSenha="";
 
   var cpfFormater = new MaskTextInputFormatter(
     mask: '###.###.###-##',
     filter: { "#": RegExp(r'[0-9]')}
   );
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                             decoration: InputDecoration(
                               counterText:"",
 
-                              label: Text('Usuário'),
+                              label: Text('CPF'),
 
                               prefixIcon: Icon(Icons.account_circle_rounded),
                               border:OutlineInputBorder(
@@ -122,21 +127,46 @@ class _HomePageState extends State<HomePage> {
                             , onPressed: (){
 
                             if(_formKey.currentState!.validate()){
-                              hashSenha = EncriptSenha.sha256Hash(_controllerPassword.text);
+                              _hashSenha = EncriptSenha.sha256Hash(_controllerPassword.text);
                             }
 
                             },),
                           SizedBox(height: 10,),
-                          GestureDetector(
-                            child: Text('Esqueceu a senha?', style: TextStyle(color: Color.fromRGBO(
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+
+
+
+
+
+                              GestureDetector(
+                                child: Text("Registrar", style: TextStyle(color: Color.fromRGBO(
                                 71, 62, 204, 1.0)),),
-                            onTap: (){
-                              setState(() {
-                                Navigator.push(context, MaterialPageRoute(
-                                  builder: (context) => EsqueceuPage()
-                                ));
-                              });
-                            },
+
+                                onTap: (){
+                                  setState(() {
+                                    Navigator.push(context, MaterialPageRoute(builder:(context) => RegisterPage()));
+                                  });
+
+                                },
+                              ),
+                              Text("  |  "),
+
+
+                              GestureDetector(
+                                child: Text('Esqueci a senha', style: TextStyle(color: Color.fromRGBO(
+                                    71, 62, 204, 1.0)),),
+                                onTap: (){
+                                  setState(() {
+                                    Navigator.push(context, MaterialPageRoute(
+                                        builder: (context) => EsqueceuPage()
+                                    ));
+                                  });
+                                },
+                              ),
+
+                            ],
                           )
                         ],
                       ),
