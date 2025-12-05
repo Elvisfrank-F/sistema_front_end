@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sistema/pages/home_page.dart';
 
 class ValidCpfPage extends StatelessWidget {
   final  String? name;
@@ -9,7 +10,7 @@ class ValidCpfPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(onPressed: (){
-          Navigator.pop(context);
+          Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
         }, icon: Icon(Icons.arrow_back)),
       ),
       body: Center(
@@ -29,7 +30,7 @@ class ValidCpfPage extends StatelessWidget {
                   Container(
                       width: 300,
                       // height: 500,
-                      child: Text("CPF autorizado, bem vindo: ${name} liberando, seu acesso á internet em instantes....",
+                      child: Text("CPF autorizado, bem vindo: ${name}, liberando seu acesso á internet em instantes....",
                         style: TextStyle(color: Colors.green, fontSize: 25),)),
                 ],
               ))),

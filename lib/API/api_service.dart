@@ -3,7 +3,7 @@ import 'dart:convert';
 
 class ApiService{
 
-  final String _baseUrl = 'http://192.168.1.34:8080/api/usuarios';
+  final String _baseUrl = 'http://192.168.1.34:8085/api/usuarios';
 
   //GET
 
@@ -29,6 +29,64 @@ class ApiService{
       return null;
     }
   }
+
+  //GET para saber se o usuario ta cadastrado (caso a senha seja nula, ele não está)
+
+  Future<bool> getRegisterUser(String cpf) async {
+    final url = Uri.parse('$_baseUrl/cpf/isRegister/$cpf');
+
+    try{
+
+      final response = await http.get(url);
+
+      if(response.statusCode == 200){
+        return json.decode(response.body)["null"] == true? true:false;
+      }
+      else {
+        return false;
+      }
+    }catch(e){
+      print(e);
+      return false;
+
+    }
+  }
+
+  //POST para saber se o login deu certo
+
+  Future<Map<String, dynamic>> getLoginSucess(Map<String, dynamic> loginho) async {
+    final url = Uri.parse("$_baseUrl/login");
+
+    try{
+
+      final response = await http.post(url,
+
+          headers: {
+            'Content-Type': 'application/json',
+          },
+
+          body: json.encode(loginho));
+
+      if(response.statusCode == 200){
+
+
+
+        Map<String, dynamic> retorno = json.decode(response.body);
+        return retorno;
+      }
+      else {
+        return {
+
+        };
+      }
+
+  }
+  catch(e){
+  return {};
+  }
+
+  }
+
 
   //GET PARA BUSCAR O NOME POR CPF
 
@@ -91,28 +149,31 @@ class ApiService{
   }
   //PUT (ATUALIZAR A SENHA)
 
-  Future<dynamic> putDados(String endpoint, String passWord) async {
-    final url = Uri.parse('$_baseUrl/$endpoint');
+  Future<bool> atualizarPassword(Map<String, dynamic> body) async {
+    final url = Uri.parse('$_baseUrl/senha/cpf');
 
     try{
 
       final response = await http.put(
         url,
-        body: passWord
+        headers: {
+          'Content-Type' : 'Application/json',
+        },
+        body: json.encode(body)
       );
 
       if(response.statusCode == 200) {
-        return passWord;
+        return json.decode(response.body)["status"] == 1? true:false;
       }
       else {
         print("Erro no PUT: ${response.statusCode}");
-        return null;
+        return false;
       }
 
     }
         catch(e){
           print('Exceção ao fazer PUT: $e');
-          return null;
+          return false;
         }
   }
 
