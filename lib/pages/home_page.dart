@@ -1,12 +1,5 @@
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
-import 'package:sistema/funcs/encript_senha.dart';
-import 'package:sistema/funcs/validador_cpf.dart';
-import 'package:sistema/pages/esqueceu_page.dart';
-
-import 'package:sistema/pages/register_page.dart';
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:sistema/API/api_service.dart';
-import 'package:sistema/pages/validCPF_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,499 +9,146 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-  String? loginError = null;
-
-  bool isViewPassword = false;
-
-  var _formKey = new GlobalKey<FormState>();
-  TextEditingController _controller = new TextEditingController();
-  TextEditingController _controllerPassword = new TextEditingController();
-
-  String _hashSenha="";
-
-  var cpfFormater = new MaskTextInputFormatter(
-    mask: '###.###.###-##',
-    filter: { "#": RegExp(r'[0-9]')}
-  );
-
-  ApiService service = new ApiService();
+  bool keyboardOpen = false;
 
   @override
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addObserver(
-      LifecycleEventHandler(
-        onMetricsChanged: () {
-          final bottom = MediaQuery.of(context).viewInsets.bottom;
-
-          if (bottom == 0) {
-            // teclado FECHOU
-            setState(() {});
-          } else {
-            // teclado ABRIU
-            setState(() {});
-          }
-        },
-      ),
-    );
+    // Escuta mensagens vindas do JS (index.html)
+    html.window.onMessage.listen((event) {
+      if (event.data == "keyboard_open") {
+        setState(() => keyboardOpen = true);
+      } else if (event.data == "keyboard_close") {
+        setState(() => keyboardOpen = false);
+      }
+    });
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
-    return OrientationBuilder(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool portrait = constraints.maxHeight > constraints.maxWidth;
 
-      builder: (context, orientation) {
-       return  orientation == Orientation.portrait
-            ? CelularPe(context)
-            : celularDeitado(context);
-      }
+        // Quando o teclado abre, você pode exibir outro layout
+        if (keyboardOpen) {
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: _buildKeyboardOpenLayout(),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: portrait
+              ? _buildVerticalLayout()
+              : _buildHorizontalLayout(),
+        );
+      },
     );
   }
 
-  Widget CelularPe(BuildContext context){
-
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-
-
-      backgroundColor: Colors.white,
-
-      body: LayoutBuilder(
-          builder:(context, constraints) {
-            return ConstrainedBox(
-              constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                //crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-
-                  Image.asset('assets/logo.jpg', width: 350),
-
-                  Card(
-                    elevation: 10,
-                    child: Container(
-                      padding: EdgeInsets.all(30),
-                      width: 370,
-                      // height: MediaQuery.of(context).size.height*0.4,
-                      // height: 400,
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-
-                            SizedBox(height: 20,),
-                            Text("Login", style: TextStyle(fontSize: 27, fontWeight: FontWeight.w600),),
-                            SizedBox(height: 20,),
-                            TextFormField(
-                              inputFormatters: [cpfFormater],
-                              keyboardType: TextInputType.number,
-                              maxLength: 14,
-                              onTap: (){
-                                setState(() {
-
-                                });
-                              },
-                              onChanged: (value){
-                                setState(() {
-
-                                });
-                              },
-
-                              decoration: InputDecoration(
-                                  counterText:"",
-
-                                  label: Text('CPF'),
-
-                                  prefixIcon: Icon(Icons.account_circle_rounded),
-                                  border:OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10)
-                                  )
-                              ),
-                              validator: (value){
-                                if(!ValidadorCpf.validadeCPF(cpfFormater.getUnmaskedText() ?? "00000000000")) {
-                                  return "CPF INVÁLIDO";
-                                }
-
-                              },
-                            ),
-                            SizedBox(height: 10,),
-                            TextFormField(
-
-                              onTap: (){
-                                setState(() {
-
-                                });
-                              },
-                              onChanged: (value){
-                                setState(() {
-
-                                });
-                              },
-
-                              controller: _controllerPassword,
-
-                              obscureText: !isViewPassword ? true:false,
-
-
-                              decoration: InputDecoration(
-
-                                  errorText: loginError,
-                                  label: Text('Senha'),
-                                  prefixIcon: Icon(Icons.security_outlined),
-                                  suffixIcon: isViewPassword ? IconButton(icon: Icon(Icons.remove_red_eye_outlined),
-                                    onPressed: (){
-                                      setState(() {
-                                        isViewPassword = !isViewPassword;
-                                      });
-                                    },):IconButton(icon: Icon(Icons.remove_red_eye),
-                                    onPressed: (){
-                                      setState(() {
-                                        isViewPassword = !isViewPassword;
-                                      });
-                                    },),
-                                  border:OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10)
-                                  )
-                              ),
-                            ),
-                            SizedBox(height: 10,),
-
-                            ElevatedButton(child: SizedBox(
-                                width: double.infinity,
-                                height: 50,
-                                child: Center(child: Text("ENTRAR", style: TextStyle(fontSize: 20, color: Colors.white)))),
-                              style: ElevatedButton.styleFrom(
-
-                                  backgroundColor: Color.fromRGBO(2, 23, 128, 1.0),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10)
-                                  )
-                              )
-
-
-                              , onPressed: () async {
-
-                                String senhas = _controllerPassword.text;
-                                String cpf = cpfFormater.getUnmaskedText();
-
-
-
-                                if(_formKey.currentState!.validate()){
-                                  _hashSenha = EncriptSenha.sha256Hash(senhas);
-
-                                  Map<String, dynamic> login = {
-                                    'cpf' : cpf,
-                                    'senha' : _hashSenha
-                                  };
-
-                                  Map<String, dynamic> retorno = await service.getLoginSucess(login);
-
-                                  if(retorno["exists"]){
-
-                                    Map<String, dynamic> nameDoValidado = await service.getNameByCpf(cpf);
-
-                                    Navigator.push(context, MaterialPageRoute(builder: (context) => ValidCpfPage(name: nameDoValidado["name"])));
-
-                                  }
-                                  else {
-                                    setState(() {
-                                      loginError = "Senha ou CPF errados";
-                                    });
-                                    _formKey.currentState!.validate();
-                                  }
-
-
-                                }
-
-
-                              },),
-                            SizedBox(height: 10,),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-
-
-
-
-
-                                GestureDetector(
-                                  child: Text("Registrar", style: TextStyle(color: Color.fromRGBO(
-                                      71, 62, 204, 1.0)),),
-
-                                  onTap: (){
-                                    setState(() {
-                                      Navigator.push(context, MaterialPageRoute(builder:(context) => RegisterPage()));
-                                    });
-
-                                  },
-                                ),
-                                Text("  |  "),
-
-
-                                GestureDetector(
-                                  child: Text('Esqueci a senha', style: TextStyle(color: Color.fromRGBO(
-                                      71, 62, 204, 1.0)),),
-                                  onTap: (){
-                                    setState(() {
-                                      Navigator.push(context, MaterialPageRoute(
-                                          builder: (context) => EsqueceuPage()
-                                      ));
-                                    });
-                                  },
-                                ),
-
-                              ],
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  )
-
-                ],
-              ),
-            );
-          }
-
+  // ------------------------------------------------------------
+  //  LAYOUT NORMAL (VERTICAL)
+  // ------------------------------------------------------------
+  Widget _buildVerticalLayout() {
+    return Center(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.home, size: 100, color: Colors.blue),
+            const SizedBox(height: 20),
+            const Text(
+              "Tela em Modo Vertical",
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            _buildInputArea(),
+          ],
+        ),
       ),
     );
-
   }
 
-  Widget celularDeitado(BuildContext context){
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-
-
-      backgroundColor: Colors.white,
-
-      body: LayoutBuilder(
-          builder:(context, constraints) {
-            return Center(
-              child: SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    //crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-
-                      Image.asset('assets/logo.jpg', width: 350),
-
-                      Card(
-                        elevation: 10,
-                        child: Container(
-                          padding: EdgeInsets.all(30),
-                          width: 370,
-                          // height: MediaQuery.of(context).size.height*0.4,
-                          // height: 400,
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              children: [
-
-                                SizedBox(height: 20,),
-                                Text("Login", style: TextStyle(fontSize: 27, fontWeight: FontWeight.w600),),
-                                SizedBox(height: 20,),
-                                TextFormField(
-                                  inputFormatters: [cpfFormater],
-                                  keyboardType: TextInputType.number,
-                                  maxLength: 14,
-                                  onTap: (){
-                                    setState(() {
-
-                                    });
-                                  },
-                                  onChanged: (value){
-                                    setState(() {
-
-                                    });
-                                  },
-
-                                  decoration: InputDecoration(
-                                      counterText:"",
-
-                                      label: Text('CPF'),
-
-                                      prefixIcon: Icon(Icons.account_circle_rounded),
-                                      border:OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(10)
-                                      )
-                                  ),
-                                  validator: (value){
-                                    if(!ValidadorCpf.validadeCPF(cpfFormater.getUnmaskedText() ?? "00000000000")) {
-                                      return "CPF INVÁLIDO";
-                                    }
-
-                                  },
-                                ),
-                                SizedBox(height: 10,),
-                                TextFormField(
-
-                                  onTap: (){
-                                    setState(() {
-
-                                    });
-                                  },
-                                  onChanged: (value){
-                                    setState(() {
-
-                                    });
-                                  },
-
-                                  controller: _controllerPassword,
-
-                                  obscureText: !isViewPassword ? true:false,
-
-
-                                  decoration: InputDecoration(
-
-                                      errorText: loginError,
-                                      label: Text('Senha'),
-                                      prefixIcon: Icon(Icons.security_outlined),
-                                      suffixIcon: isViewPassword ? IconButton(icon: Icon(Icons.remove_red_eye_outlined),
-                                        onPressed: (){
-                                          setState(() {
-                                            isViewPassword = !isViewPassword;
-                                          });
-                                        },):IconButton(icon: Icon(Icons.remove_red_eye),
-                                        onPressed: (){
-                                          setState(() {
-                                            isViewPassword = !isViewPassword;
-                                          });
-                                        },),
-                                      border:OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(10)
-                                      )
-                                  ),
-                                ),
-                                SizedBox(height: 10,),
-
-                                ElevatedButton(child: SizedBox(
-                                    width: double.infinity,
-                                    height: 50,
-                                    child: Center(child: Text("ENTRAR", style: TextStyle(fontSize: 20, color: Colors.white)))),
-                                  style: ElevatedButton.styleFrom(
-
-                                      backgroundColor: Color.fromRGBO(2, 23, 128, 1.0),
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(10)
-                                      )
-                                  )
-
-
-                                  , onPressed: () async {
-
-                                    String senhas = _controllerPassword.text;
-                                    String cpf = cpfFormater.getUnmaskedText();
-
-
-
-                                    if(_formKey.currentState!.validate()){
-                                      _hashSenha = EncriptSenha.sha256Hash(senhas);
-
-                                      Map<String, dynamic> login = {
-                                        'cpf' : cpf,
-                                        'senha' : _hashSenha
-                                      };
-
-                                      Map<String, dynamic> retorno = await service.getLoginSucess(login);
-
-                                      if(retorno["exists"]){
-
-                                        Map<String, dynamic> nameDoValidado = await service.getNameByCpf(cpf);
-
-                                        Navigator.push(context, MaterialPageRoute(builder: (context) => ValidCpfPage(name: nameDoValidado["name"])));
-
-                                      }
-                                      else {
-                                        setState(() {
-                                          loginError = "Senha ou CPF errados";
-                                        });
-                                        _formKey.currentState!.validate();
-                                      }
-
-
-                                    }
-
-
-                                  },),
-                                SizedBox(height: 10,),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-
-
-
-
-
-                                    GestureDetector(
-                                      child: Text("Registrar", style: TextStyle(color: Color.fromRGBO(
-                                          71, 62, 204, 1.0)),),
-
-                                      onTap: (){
-                                        setState(() {
-                                          Navigator.push(context, MaterialPageRoute(builder:(context) => RegisterPage()));
-                                        });
-
-                                      },
-                                    ),
-                                    Text("  |  "),
-
-
-                                    GestureDetector(
-                                      child: Text('Esqueci a senha', style: TextStyle(color: Color.fromRGBO(
-                                          71, 62, 204, 1.0)),),
-                                      onTap: (){
-                                        setState(() {
-                                          Navigator.push(context, MaterialPageRoute(
-                                              builder: (context) => EsqueceuPage()
-                                          ));
-                                        });
-                                      },
-                                    ),
-
-                                  ],
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                      )
-
-                    ],
-                  ),
-                ),
+  // ------------------------------------------------------------
+  //  LAYOUT NORMAL (HORIZONTAL)
+  // ------------------------------------------------------------
+  Widget _buildHorizontalLayout() {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            color: Colors.blue.shade100,
+            child: const Center(
+              child: Text(
+                "Paisagem",
+                style: TextStyle(fontSize: 30),
               ),
-            );
-          }
+            ),
+          ),
+        ),
+        Expanded(
+          child: Center(child: _buildInputArea()),
+        ),
+      ],
+    );
+  }
 
+  // ------------------------------------------------------------
+  //  LAYOUT QUANDO O TECLADO ESTÁ ABERTO
+  // ------------------------------------------------------------
+  Widget _buildKeyboardOpenLayout() {
+    return Center(
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+          const Text(
+            "Teclado aberto",
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: _buildInputArea(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------
+  //  CAMPO DE TEXTO (COMPORTA BEM COM TECLADO)
+  // ------------------------------------------------------------
+  Widget _buildInputArea() {
+    return Container(
+      width: 300,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: Colors.grey.shade200,
+      ),
+      child: Column(
+        children: [
+          const Text(
+            "Digite algo:",
+            style: TextStyle(fontSize: 18),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
-
-class LifecycleEventHandler with WidgetsBindingObserver {
-  final VoidCallback onMetricsChanged;
-
-  LifecycleEventHandler({required this.onMetricsChanged});
-
-  @override
-  void didChangeMetrics() {
-    onMetricsChanged();
-  }
-
-}
-
-
-
-
