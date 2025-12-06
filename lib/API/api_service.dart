@@ -3,7 +3,7 @@ import 'dart:convert';
 
 class ApiService{
 
-  final String _baseUrl = 'http://192.168.18.72:9090/api/usuarios';
+  final String _baseUrl = 'http://192.168.1.34:9090/api/usuarios';
 
   //GET
 
